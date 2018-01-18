@@ -1,0 +1,17 @@
+{
+  "name": "refreshed",
+  "version": "1.0.0",
+  "description": "image cache for refreshed",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jienan Zhang",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.2",
+    "multer": "^1.3.0",
+    "redis": "^2.8.0",
+    "request": "^2.83.0"
+  }
+}
