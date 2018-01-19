@@ -35,7 +35,7 @@ function queryRedis(source) {
 			if (error) {
 				resolve(jsonfy(source, ""));
 			} else {
-				if (reply === null) {
+				if (reply === null || reply == "") {
 					// Promise.resolve().
 					const urlQwant = host.format(source);
 					console.log(urlQwant);
