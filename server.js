@@ -31,7 +31,7 @@ app.post('/images', upload.array(), function (req, res, next) {
 function queryRedis(source) {
 	// return a new promise.
 	return new Promise(function(resolve, reject) {
-		client.get("refreshed:source:"+source, function(error, reply) {
+		client.get("refreshed:source:"+source.toLowerCase(), function(error, reply) {
 			if (error) {
 				resolve(jsonfy(source, ""));
 			} else {
@@ -83,8 +83,8 @@ function queryRedis(source) {
 
 function addToRedis(source, imgUrl) {
 	// imgUrl may be "", so I may manually amend it later.
-	client.sadd("refreshed:sources", source, redis.print);
-	client.set("refreshed:source:"+source, imgUrl, redis.print);
+	client.sadd("refreshed:sources", source.toLowerCase(), redis.print);
+	client.set("refreshed:source:"+source.toLowerCase(), imgUrl, redis.print);
 }
 
 app.listen(port);
