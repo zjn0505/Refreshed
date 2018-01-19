@@ -52,7 +52,12 @@ function queryRedis(source) {
 							addToRedis(source, "");
 							resolve(jsonfy(source, ""));
 						}
-						var json = JSON.parse(body);
+						try {
+							var json = JSON.parse(body);
+						}
+						catch (err) {
+							console.log("Error in parse " + body);
+						}
 						if (json.status == "success" && !(json.data == undefined) && !(json.data.result == undefined)) {
 							var result = json.data.result;
 							if (!(result.items == null) && !(result.items == undefined) && result.items.length > 0) {
