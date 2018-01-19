@@ -33,12 +33,13 @@ function queryRedis(source) {
 	return new Promise(function(resolve, reject) {
 		client.get(source, function(error, reply) {
 			if (error) {
-				throw error;
+				resolve(jsonfy(source, ""));
 			} else {
 				if (reply === null) {
 					// Promise.resolve().
 					const urlQwant = host.format(source);
 					console.log(urlQwant);
+					console.log("Query " + source + " from web")
 					var options = {
 						url: urlQwant,
 						headers: {
@@ -60,13 +61,14 @@ function queryRedis(source) {
 								client.set(source, imgUrl, redis.print);
 								resolve(jsonfy(source, imgUrl));
 							} else {
-								reject(body);
+								resolve(jsonfy(source, ""));
 							}
 						} else {
-							reject(body);
+							resolve(jsonfy(source, ""));
 						}
 					});
 				} else {
+					console.log("Query " + source + " from Redis")
 					resolve(jsonfy(source, reply));
 				}
 			}
