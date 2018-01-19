@@ -52,13 +52,14 @@ function queryRedis(source) {
 							addToRedis(source, "");
 							resolve(jsonfy(source, ""));
 						}
+						var json;
 						try {
-							var json = JSON.parse(body);
+							json = JSON.parse(body);
 						}
 						catch (err) {
 							console.log("Error in parse " + body);
 						}
-						if (json.status && json.status == "success" && !(json.data == undefined) && !(json.data.result == undefined)) {
+						if (json && json.status == "success" && !(json.data == undefined) && !(json.data.result == undefined)) {
 							var result = json.data.result;
 							if (!(result.items == null) && !(result.items == undefined) && result.items.length > 0) {
 								var imgUrl = result.items[0].media;
