@@ -4,9 +4,9 @@ var redis = require('redis'),
 var multer = require('multer');
 var upload = multer();
 var express = require('express'),
- bodyParser = require('body-parser'),
-        app = express(),
-       port = 3002;
+	bodyParser = require('body-parser'),
+		app = express(),
+		port = 3002;
 const host = "https://api.qwant.com/api/search/images?count=10&offset=1&q={0}&size=small";
 
 app.use(bodyParser.json());
@@ -38,10 +38,11 @@ function queryRedis(source) {
 				if (reply === null) {
 					// Promise.resolve().
 					const urlQwant = host.format(source);
+					console.log(urlQwant);
 					var options = {
 						url: urlQwant,
 						headers: {
-							'User-Agent': 'request'
+							'User-Agent': 'request/1'
 						}
 					};
 					request(options, function(error, response, body) {
@@ -58,7 +59,11 @@ function queryRedis(source) {
 								client.sadd("refreshed:sources", source, redis.print);
 								client.set(source, imgUrl, redis.print);
 								resolve(jsonfy(source, imgUrl));
+							} else {
+								reject(body);
 							}
+						} else {
+							reject(body);
 						}
 					});
 				} else {
