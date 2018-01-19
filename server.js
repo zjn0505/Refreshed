@@ -47,7 +47,7 @@ function queryRedis(source) {
 						}
 					};
 					request(options, function(error, response, body) {
-						if (error) {
+						if (error || body === null || body === undefined) {
 							console.log("Error in query " + error);
 							addToRedis(source, "");
 							resolve(jsonfy(source, ""));
