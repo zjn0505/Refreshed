@@ -4,15 +4,17 @@ var redis = require('redis'),
 var multer = require('multer');
 var upload = multer();
 var express = require('express'),
-		app = express(),
-		port = 3002;
+ bodyParser = require('body-parser'),
+        app = express(),
+       port = 3002;
 const host = "https://api.qwant.com/api/search/images?count=10&offset=1&q={0}&size=small";
 
+app.use(bodyParser.json());
 
 app.post('/images', upload.array(), function (req, res, next) {
 	console.log(req.body);
 	var images = [];
-	images = images.concat(req.body.image);
+	images = images.concat(req.body);
 
 	Promise.all(images.map(queryRedis)).then(function(resp) {
 		console.log(resp);
@@ -31,7 +33,7 @@ function queryRedis(source) {
 	return new Promise(function(resolve, reject) {
 		client.get(source, function(error, reply) {
 			if (error) {
-				reject(Error(error));
+				throw error;
 			} else {
 				if (reply === null) {
 					// Promise.resolve().
@@ -43,6 +45,9 @@ function queryRedis(source) {
 						}
 					};
 					request(options, function(error, response, body) {
+						if (error) {
+							throw error;
+						}
 						var json = JSON.parse(body);
 						if (json.status == "success" && !(json.data == undefined) && !(json.data.result == undefined)) {
 							var result = json.data.result;
