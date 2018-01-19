@@ -31,7 +31,7 @@ app.post('/images', upload.array(), function (req, res, next) {
 function queryRedis(source) {
 	// return a new promise.
 	return new Promise(function(resolve, reject) {
-		client.get(source, function(error, reply) {
+		client.get("refreshed:source:"+source, function(error, reply) {
 			if (error) {
 				resolve(jsonfy(source, ""));
 			} else {
@@ -48,22 +48,26 @@ function queryRedis(source) {
 					};
 					request(options, function(error, response, body) {
 						if (error) {
-							throw error;
+							console.log("Error in query " + error);
+							addToRedis(source, "");
+							resolve(jsonfy(source, ""));
 						}
 						var json = JSON.parse(body);
 						if (json.status == "success" && !(json.data == undefined) && !(json.data.result == undefined)) {
 							var result = json.data.result;
 							if (!(result.items == null) && !(result.items == undefined) && result.items.length > 0) {
-								// res.send(result.items[0].media);
 								var imgUrl = result.items[0].media;
 								console.log(imgUrl);
-								client.sadd("refreshed:sources", source, redis.print);
-								client.set(source, imgUrl, redis.print);
+								addToRedis(source, imgUrl);
 								resolve(jsonfy(source, imgUrl));
 							} else {
+								addToRedis(source, "");
+								console.log("Error no result in query " + body);
 								resolve(jsonfy(source, ""));
 							}
 						} else {
+							console.log("Error in upstream api " + body);
+							addToRedis(source, "");
 							resolve(jsonfy(source, ""));
 						}
 					});
@@ -76,6 +80,12 @@ function queryRedis(source) {
 	});
 }
 
+
+function addToRedis(source, imgUrl) {
+	// imgUrl may be "", so I may manually amend it later.
+	client.sadd("refreshed:sources", source, redis.print);
+	client.set("refreshed:source:"+source, imgUrl, redis.print);
+}
 
 app.listen(port);
 
