@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Refreshed - source images</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<style type="text/css">
+		img  {
+			width:  100px;
+			height: 100px;
+		}
+		tbody {
+			text-align: center;
+			background-color: lightblue;
+		}
+		p.tag {
+			margin: 3px 0px 3px 0px;
+		}
+		div.holder {
+			display:inline-block;
+		}
+		div.cell {
+			display:inline-block;
+			text-align: center;
+			border-style: groove;
+			background-color: lightblue;
+		}
+	</style>
+</head>
+<body>
+
+	<div class="container" id="holder">
+		<!-- <div class="cell"><img alt="msn" src='https://media.glassdoor.com/sqll/519673/msn-labs-hyderabad-squarelogo-1464598606285.png'/><p class="tag">msn</p></div> -->
+		
+	</div>
+	<div class="container">
+		<div id="editUrlModal" class="modal fade" role="dialog" style="width:80%; margin: 0 auto">
+		  <div class="modal-dialog">
+
+		    <!-- Modal content-->
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		        <h4 class="modal-title">Input the new image URL</h4>
+		      </div>
+		      <div class="modal-body">
+		        <input id="sourceUrl" class="form-control" placeholder="input the new image url here"/>
+		        <br>
+		        <input id="keycode" class="form-control" style="width: 50%;" placeholder="input keycode" type="password"/>
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-default" id="saveEditBtn">Save</button>
+		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		      </div>
+		    </div>
+
+		  </div>
+		</div>
+	</div>
+	
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script type="text/javascript">
+	const paramsTemplate = "source={0}&url={1}";
+	var source;
+	$(document).ready(function(){
+	    $("p.tag").on("click", function(){
+	        $("#editUrlModal").modal();
+	        source = $(this).text();
+	        var url = $("img[alt="+source+"]").attr("src");
+	        $("#sourceUrl").val(url);
+
+	    });
+	});
+	$("#saveEditBtn").on("click", function(){
+		var inputKey = $("#keycode");
+		if (inputKey.val() == "") {
+			inputKey.attr("placeholder", "Please input the keycode");
+		} else {
+			var host = "http://130.211.211.220:3002/update-images"
+			var params = paramsTemplate.format(source, $("#sourceUrl").val())
+			var xhr = new createCORSRequest("POST", host);
+			xhr.open("POST", host, true);
+			xhr.setRequestHeader("x-api-key", inputKey.val());
+			xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+			xhr.onreadystatechange = function() {
+				if(xhr.readyState == 4) {
+      				if (xhr.status == 200) {
+      					$("#editUrlModal").modal("hide");
+      				}
+      			}
+			}
+			xhr.send(params);
+		}
+	});
+
+	function createCORSRequest(method, url) {
+	  var xhr = new XMLHttpRequest();
+	  if ("withCredentials" in xhr) {
+	    // XHR for Chrome/Firefox/Opera/Safari.
+	    xhr.open(method, url, true);
+	  } else if (typeof XDomainRequest != "undefined") {
+	    // XDomainRequest for IE.
+	    xhr = new XDomainRequest();
+	    xhr.open(method, url);
+	  } else {
+	    // CORS not supported.
+	    xhr = null;
+	    console.log("not support CORS");
+	  }
+	  return xhr;
+	}
+	String.prototype.format = function() {
+	    var formatted = this;
+	    for( var arg in arguments ) {
+	        formatted = formatted.replace("{" + arg + "}", arguments[arg]);
+	    }
+	    return formatted;
+	};
+	</script>
+</html>
