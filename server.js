@@ -28,14 +28,16 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
 
 app.get('/all-images', function(req, res) {
+	console.log("API called /all-images");
 	client.smembers("refreshed:sources", function(error, reply) {
 		if (error) {
 			res.sendStatus(500);
 		}
 		if (reply) {
+			console.log("Totally " + reply.length+ " sources");
 			Promise.all(reply.map(createTable)).then(function(resp) {
 				var insertHtml="";
-
+				console.log(resp);
 				for (var i = 0; i < resp.length; i++) {
 					
 
@@ -60,12 +62,12 @@ app.get('/all-images', function(req, res) {
 function createTable(source) {
 	return new Promise(function(resolve, reject) {
 		client.get("refreshed:source:"+source.toLowerCase(), function(error, reply) {
-			if (error) {
-				resolve("");
-			}
 			if (reply) {
 				resolve(reply);
+			} else {
+				resolve("");
 			}
+				
 		});
 	});
 }
