@@ -18,6 +18,11 @@
 		}
 		p.tag {
 			margin: 3px 0px 3px 0px;
+			background-color: rgba(255, 255, 255, 0.5);
+			position: absolute;
+			bottom : 0%;
+			width: 100%;
+			font-size: 20px;
 		}
 		div.holder {
 			display:inline-block;
@@ -27,14 +32,15 @@
 			text-align: center;
 			border-style: groove;
 			background-color: lightblue;
+			position: relative;
+			width:  100px;
 		}
 	</style>
 </head>
 <body>
 
 	<div class="container" id="holder">
-		<!-- <div class="cell"><img alt="msn" src='https://media.glassdoor.com/sqll/519673/msn-labs-hyderabad-squarelogo-1464598606285.png'/><p class="tag">msn</p></div> -->
-		
+		<div class="cell"><img alt="msn" src='https://media.glassdoor.com/sqll/519673/msn-labs-hyderabad-squarelogo-1464598606285.png'/><p class="tag">msn</p></div>
 	</div>
 	<div class="container">
 		<div id="editUrlModal" class="modal fade" role="dialog" style="width:80%; margin: 0 auto">
@@ -91,6 +97,9 @@
 				if(xhr.readyState == 4) {
       				if (xhr.status == 200) {
       					$("#editUrlModal").modal("hide");
+      					window.location.reload();
+      				} else {
+      					$("div .modal-title").html(xhr.response);
       				}
       			}
 			}

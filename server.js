@@ -23,7 +23,6 @@ fs.readFile(filePath, {encoding: 'utf-8'}, function(err,data){
     }
 });
 
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
 
@@ -39,14 +38,10 @@ app.get('/all-images', function(req, res) {
 				var insertHtml="";
 				console.log(resp);
 				for (var i = 0; i < resp.length; i++) {
-					
-
 					var sourceName = reply[i];
 					var url = resp[i];
 					insertHtml += template.format(sourceName, url, sourceName);
-
 				}
-
 				$("#holder").html(insertHtml);
 				console.log(reply);
 				res.send($.html());
