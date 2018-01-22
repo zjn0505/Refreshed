@@ -34,6 +34,7 @@ app.get('/topic', function(req, res) {
 			res.sendStatus(500);
 		} else {
 			console.log('my sweet sweet results', results);
+			results = JSON.parse(results);
 			console.log(results['default']);
 			console.log(results['default'].topics);
 			if (results && results.default && results.default.topics) {
