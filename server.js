@@ -81,13 +81,13 @@ app.post('/update-images',  function(req, res) {
 			}
 			if (reply) {
 				if (reply != keycode) {
-					res.status(400).send("Invalid keycode");
+					res.status(401).send("Invalid keycode");
 				} else {
 					client.set("refreshed:source:"+source.toLowerCase(), url, redis.print);
 					res.status(200).send("OK");
 				}
 			} else {
-				res.status(400).send("Invalid keycode");
+				res.status(401).send("Invalid keycode");
 			}
 		});
 	}
