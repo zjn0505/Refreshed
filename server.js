@@ -29,12 +29,13 @@ app.use(bodyParser.urlencoded({extended:true}));
 
 app.get('/topic', function(req, res) {
 	googleTrends.autoComplete({keyword: req.query.q}, function(err, results){
-		console.log(results);
 		if(err) {
 			console.error('there was an error!', err);
 			res.sendStatus(500);
 		} else {
 			console.log('my sweet sweet results', results);
+			console.log(results.default);
+			console.log(results.default.topics);
 			if (results && results.default && results.default.topics) {
 				var topics = results.default.topics;
 				res.json(topics);
