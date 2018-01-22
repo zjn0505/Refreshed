@@ -12,6 +12,7 @@ var fs = require('fs'),
     filePath = path.join(__dirname, 'table.html');
 const cheerio = require('cheerio');
 var $;
+const googleTrends = require('google-trends-api');
 const host = "https://api.qwant.com/api/search/images?count=10&offset=1&q={0}&size=small";
 const template = "<div class='cell'><img alt='{0}' src='{1}'/><p class='tag'>{2}</p></div>";
 
@@ -25,6 +26,23 @@ fs.readFile(filePath, {encoding: 'utf-8'}, function(err,data){
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
+
+app.get('/topic', function(req, res) {
+	googleTrends.autoComplete({keyword: req.query.q}, function(err, results){
+		if(err) {
+			console.error('there was an error!', err);
+			res.sendStatus(500);
+		} else {
+			console.log('my sweet sweet results', results);
+			if (results && results.default && results.default.topics) {
+				var topics = results.default.topics;
+				res.json(topics);
+				return;
+			}
+			res.json();
+		}
+	});
+});
 
 app.get('/all-images', function(req, res) {
 	console.log("API called /all-images");
