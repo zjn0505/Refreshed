@@ -29,6 +29,7 @@ app.use(bodyParser.urlencoded({extended:true}));
 
 app.get('/topic', function(req, res) {
 	googleTrends.autoComplete({keyword: req.query.q}, function(err, results){
+		console.log(results);
 		if(err) {
 			console.error('there was an error!', err);
 			res.sendStatus(500);
