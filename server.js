@@ -68,20 +68,24 @@ app.get('/all-images', function(req, res) {
 				res.sendStatus(500);
 			}
 			if (reply) {
-				reply = reply.map(function(topic) {
+				var arr = []
+				arr = reply.map(function(topic) {
 					var object = {type:"topic", query:topic};
 					return object;
 				});
-				reply = reply.concat(response);
-				console.log("Totally " + reply.length+ " sources");
-				Promise.all(reply.map(createTable)).then(function(resp) {
+
+				arr = arr.concat(response);
+				console.log("Totally " + arr.length+ " sources");
+				Promise.all(arr.map(createTable)).then(function(resp) {
 					var insertHtml="";
 					console.log(resp);
 					for (var i = 0; i < resp.length; i++) {
-						var sourceName = reply[i].query;
-						var url = resp[i].imgUrl;
-						var type = resp[i].type;
-						insertHtml += template.format(sourceName, url, type, sourceName);
+						if (reply[i] != "") {
+							var sourceName = reply[i].query;
+							var url = resp[i].imgUrl;
+							var type = resp[i].type;
+							insertHtml += template.format(sourceName, url, type, sourceName);
+						}
 					}
 					$("#holder").html(insertHtml);
 					console.log(reply);
