@@ -71,12 +71,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <script type="text/javascript">
-	const paramsTemplate = "source={0}&url={1}";
+	const paramsTemplate = "source={0}&url={1}&type={2}";
 	var source;
+	var type;
 	$(document).ready(function(){
 	    $("p.tag").on("click", function(){
 	        $("#editUrlModal").modal();
 	        source = $(this).text();
+	        type = $(this).data("type");
 	        var url = $("img[alt="+source+"]").attr("src");
 	        $("#sourceUrl").val(url);
 
@@ -88,7 +90,7 @@
 			inputKey.attr("placeholder", "Please input the keycode");
 		} else {
 			var host = "http://130.211.211.220:3002/update-images"
-			var params = paramsTemplate.format(source, $("#sourceUrl").val())
+			var params = paramsTemplate.format(source, $("#sourceUrl").val(), type)
 			var xhr = new createCORSRequest("POST", host);
 			xhr.open("POST", host, true);
 			xhr.setRequestHeader("x-api-key", inputKey.val());

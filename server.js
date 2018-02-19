@@ -14,7 +14,7 @@ const cheerio = require('cheerio');
 var $;
 const googleTrends = require('google-trends-api');
 const host = "https://api.qwant.com/api/search/images?count=10&offset=1&q={0}&size=small";
-const template = "<div class='cell'><img alt='{0}' src='{1}'/><p class='tag'>{2}</p></div>";
+const template = "<div class='cell'><img alt='{0}' src='{1}'/><p class='tag' type={2}>{3}</p></div>";
 
 fs.readFile(filePath, {encoding: 'utf-8'}, function(err,data){
     if (!err) {
@@ -49,37 +49,60 @@ app.get('/topic', function(req, res) {
 
 app.get('/all-images', function(req, res) {
 	console.log("API called /all-images");
-	client.smembers("refreshed:sources", function(error, reply) {
-		if (error) {
-			res.sendStatus(500);
-		}
-		if (reply) {
-			console.log("Totally " + reply.length+ " sources");
-			Promise.all(reply.map(createTable)).then(function(resp) {
-				var insertHtml="";
-				console.log(resp);
-				for (var i = 0; i < resp.length; i++) {
-					var sourceName = reply[i];
-					var url = resp[i];
-					insertHtml += template.format(sourceName, url, sourceName);
-				}
-				$("#holder").html(insertHtml);
-				console.log(reply);
-				res.send($.html());
-			}).catch(function(err) {
-				console.log(err);
+	new Promise(function(resolve, reject) {
+		client.smembers("refreshed:sources", function(error, reply) {
+			if (error) {
 				res.sendStatus(500);
-			});
-			
-		}
+				reject(Error("Query sources failed"));
+			}
+			if (reply) {
+				resolve(reply.map(function(source) {
+					var object = {type:"source", query:source};
+					return object;
+				}));	
+			}
+		});
+	}).then(function(response) {
+		client.smembers("refreshed:topics", function(error, reply) {
+			if (error) {
+				res.sendStatus(500);
+			}
+			if (reply) {
+				reply.map(function(topic) {
+					var object = {type:"topic", query:topic};
+					return object;
+				});
+				reply = reply.concat(response);
+				console.log("Totally " + reply.length+ " sources");
+				Promise.all(reply.map(createTable)).then(function(resp) {
+					var insertHtml="";
+					console.log(resp);
+					for (var i = 0; i < resp.length; i++) {
+						var sourceName = reply[i].query;
+						var url = resp[i].imgUrl;
+						var type = resp[i].type;
+						insertHtml += template.format(sourceName, url, type, sourceName);
+					}
+					$("#holder").html(insertHtml);
+					console.log(reply);
+					res.send($.html());
+				}).catch(function(err) {
+					console.log(err);
+					res.sendStatus(500);
+				});
+				
+			}
+		});
 	});
+	
 });
 
-function createTable(source) {
+function createTable(query) {
 	return new Promise(function(resolve, reject) {
-		client.get("refreshed:source:"+source.toLowerCase(), function(error, reply) {
+
+		client.get("refreshed:"+query.type+":"+query.query.toLowerCase(), function(error, reply) {
 			if (reply) {
-				resolve(reply);
+				resolve({imgUrl:reply, type:query.type});
 			} else {
 				resolve("");
 			}
@@ -92,8 +115,9 @@ app.post('/update-images',  function(req, res) {
 	if (req.body) {
 		var keycode = req.headers['x-api-key'];
 		var source = req.body.source;
+		var type = req.body.type;
 		var url = req.body.url;
-		if (!keycode || !source) {
+		if (!keycode || !source || !type || (type != "topic" || type != "source")) {
 			res.status(400).send("Invalid request");
 		}
 		client.get("password", function(error, reply) {
@@ -104,7 +128,7 @@ app.post('/update-images',  function(req, res) {
 				if (reply != keycode) {
 					res.status(401).send("Invalid keycode");
 				} else {
-					client.set("refreshed:source:"+source.toLowerCase(), url, redis.print);
+					client.set("refreshed:"+ type +":"+source.toLowerCase(), url, redis.print);
 					res.status(200).send("OK");
 				}
 			} else {
