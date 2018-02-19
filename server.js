@@ -131,18 +131,24 @@ app.post('/images', upload.array(), function(req, res, next) {
 	});
 });
 
-function queryRedis(source) {
+function queryRedis(query) {
 	// return a new promise.
 	return new Promise(function(resolve, reject) {
-		client.get("refreshed:source:"+source.toLowerCase(), function(error, reply) {
+		var redisQuery = ""
+		if (query.type == "source") {
+			redisQuery = "refreshed:source:"+query.query.toLowerCase();
+		} else if (query.type == "topic") {
+			redisQuery = "refreshed:topic:"+query.query.toLowerCase();
+		}
+		client.get(redisQuery, function(error, reply) {
 			if (error) {
-				resolve(jsonfy(source, ""));
+				resolve(jsonfy(query.query, ""));
 			} else {
 				if (reply === null || reply == "") {
 					// Promise.resolve().
-					const urlQwant = host.format(source);
+					const urlQwant = host.format(query.query);
 					console.log(urlQwant);
-					console.log("Query " + source + " from web")
+					console.log("Query " + query.query + " from web")
 					var options = {
 						url: urlQwant,
 						headers: {
@@ -152,8 +158,8 @@ function queryRedis(source) {
 					request(options, function(error, response, body) {
 						if (error || body === null || body === undefined) {
 							console.log("Error in query " + error);
-							addToRedis(source, "");
-							resolve(jsonfy(source, ""));
+							addToRedis(query, "");
+							resolve(jsonfy(query.query, ""));
 						}
 						var json;
 						try {
@@ -167,22 +173,22 @@ function queryRedis(source) {
 							if (!(result.items == null) && !(result.items == undefined) && result.items.length > 0) {
 								var imgUrl = result.items[0].media;
 								console.log(imgUrl);
-								addToRedis(source, imgUrl);
-								resolve(jsonfy(source, imgUrl));
+								addToRedis(query, imgUrl);
+								resolve(jsonfy(query.query, imgUrl));
 							} else {
-								addToRedis(source, "");
+								addToRedis(query, "");
 								console.log("Error no result in query " + body);
-								resolve(jsonfy(source, ""));
+								resolve(jsonfy(query.query, ""));
 							}
 						} else {
 							console.log("Error in upstream api " + body);
-							addToRedis(source, "");
-							resolve(jsonfy(source, ""));
+							addToRedis(query, "");
+							resolve(jsonfy(query.query, ""));
 						}
 					});
 				} else {
-					console.log("Query " + source + " from Redis")
-					resolve(jsonfy(source, reply));
+					console.log("Query " + query.query + " from Redis")
+					resolve(jsonfy(query.query, reply));
 				}
 			}
 		});
@@ -190,10 +196,17 @@ function queryRedis(source) {
 }
 
 
-function addToRedis(source, imgUrl) {
+function addToRedis(query, imgUrl) {
 	// imgUrl may be "", so I may manually amend it later.
-	client.sadd("refreshed:sources", source.toLowerCase(), redis.print);
-	client.set("refreshed:source:"+source.toLowerCase(), imgUrl, redis.print);
+	var redisQuery = ""
+	if (query.type == "source") {
+		client.sadd("refreshed:sources", query.query.toLowerCase(), redis.print);
+		client.set("refreshed:source:"+query.query.toLowerCase(), imgUrl, redis.print);
+	} else if (query.type == "topic") {
+		client.sadd("refreshed:topics", query.query.toLowerCase(), redis.print);
+		client.hset("refreshed:topic:"+query.query.toLowerCase(), "imgUrl", imgUrl, redis.print);
+	}
+	
 }
 
 app.use(function(req, res, next) {
