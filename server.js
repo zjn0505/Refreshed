@@ -80,12 +80,13 @@ app.get('/all-images', function(req, res) {
 					var insertHtml="";
 					console.log(resp);
 					for (var i = 0; i < resp.length; i++) {
-						if (reply[i] != "") {
-							var sourceName = reply[i].query;
-							var url = resp[i].imgUrl;
-							var type = resp[i].type;
-							insertHtml += template.format(sourceName, url, type, sourceName);
+						if (!reply[i] || !reply[i].query) {
+							continue;
 						}
+						var sourceName = reply[i].query;
+						var url = resp[i].imgUrl;
+						var type = resp[i].type;
+						insertHtml += template.format(sourceName, url, type, sourceName);
 					}
 					$("#holder").html(insertHtml);
 					console.log(reply);
