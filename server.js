@@ -68,7 +68,7 @@ app.get('/all-images', function(req, res) {
 				res.sendStatus(500);
 			}
 			if (reply) {
-				reply.map(function(topic) {
+				reply = reply.map(function(topic) {
 					var object = {type:"topic", query:topic};
 					return object;
 				});
@@ -99,7 +99,9 @@ app.get('/all-images', function(req, res) {
 
 function createTable(query) {
 	return new Promise(function(resolve, reject) {
-
+		if (!query || !query.query) {
+			resolve("");
+		}
 		client.get("refreshed:"+query.type+":"+query.query.toLowerCase(), function(error, reply) {
 			if (reply) {
 				resolve({imgUrl:reply, type:query.type});
