@@ -80,10 +80,10 @@ app.get('/all-images', function(req, res) {
 					var insertHtml="";
 					console.log(resp);
 					for (var i = 0; i < resp.length; i++) {
-						if (!reply[i] || !reply[i].query) {
+						if (!resp[i] || !resp[i].query) {
 							continue;
 						}
-						var sourceName = reply[i].query;
+						var sourceName = resp[i].query;
 						var url = resp[i].imgUrl;
 						var type = resp[i].type;
 						insertHtml += template.format(sourceName, url, type, sourceName);
@@ -109,7 +109,7 @@ function createTable(query) {
 		if (query.type == "source") {
 			client.get("refreshed:source:"+query.query.toLowerCase(), function(error, reply) {
 				if (reply) {
-					resolve({imgUrl:reply, type:query.type});
+					resolve({imgUrl:reply, type:query.type, query:query.query});
 				} else {
 					resolve("");
 				}
@@ -118,7 +118,7 @@ function createTable(query) {
 		} else if (query.type == "topic") {
 			client.hget("refreshed:topic:"+query.query.toLowerCase(), function(error, reply) {
 				if (reply) {
-					resolve({imgUrl:reply.imgUrl, type:query.type});
+					resolve({imgUrl:reply.imgUrl, type:query.type, query:query.query});
 				} else {
 					resolve("");
 				}
