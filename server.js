@@ -89,7 +89,6 @@ app.get('/all-images', function(req, res) {
 						insertHtml += template.format(sourceName, url, type, sourceName);
 					}
 					$("#holder").html(insertHtml);
-					console.log(reply);
 					res.send($.html());
 				}).catch(function(err) {
 					console.log(err);
@@ -107,14 +106,26 @@ function createTable(query) {
 		if (!query || !query.query) {
 			resolve("");
 		}
-		client.get("refreshed:"+query.type+":"+query.query.toLowerCase(), function(error, reply) {
-			if (reply) {
-				resolve({imgUrl:reply, type:query.type});
-			} else {
-				resolve("");
-			}
-				
-		});
+		if (query.type == "source") {
+			client.get("refreshed:source:"+query.query.toLowerCase(), function(error, reply) {
+				if (reply) {
+					resolve({imgUrl:reply, type:query.type});
+				} else {
+					resolve("");
+				}
+					
+			});
+		} else if (query.type == "topic") {
+			client.hget("refreshed:topic:"+query.query.toLowerCase(), function(error, reply) {
+				if (reply) {
+					resolve({imgUrl:reply.imgUrl, type:query.type});
+				} else {
+					resolve("");
+				}
+					
+			});
+		}
+		
 	});
 }
 
