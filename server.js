@@ -134,7 +134,7 @@ app.post('/update-images',  function(req, res) {
 		var source = req.body.source;
 		var type = req.body.type;
 		var url = req.body.url;
-		if (!keycode || !source || !type || (type != "topic" || type != "source")) {
+		if (!keycode || !source || !type || (type != "topic" && type != "source")) {
 			res.status(400).send("Invalid request");
 		}
 		client.get("password", function(error, reply) {
