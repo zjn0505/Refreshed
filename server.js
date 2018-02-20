@@ -69,12 +69,23 @@ app.get('/all-images', function(req, res) {
 			}
 			if (reply) {
 				var arr = []
-				arr = reply.map(function(topic) {
-					var object = {type:"topic", query:topic};
-					return object;
-				});
+				var type = req.query.type;
+				if (!type) {
+					arr = reply.map(function(topic) {
+						var object = {type:"topic", query:topic};
+						return object;
+					});
 
-				arr = arr.concat(response);
+					arr = arr.concat(response);
+				} else if (type == "topics") {
+					arr = reply.map(function(topic) {
+						var object = {type:"topic", query:topic};
+						return object;
+					});
+				} else if (type == "sources") {
+					arr = arr.concat(response);
+				}
+				
 				console.log("Totally " + arr.length+ " sources");
 				Promise.all(arr.map(createTable)).then(function(resp) {
 					var insertHtml="";
