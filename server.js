@@ -78,7 +78,6 @@ app.get('/all-images', function(req, res) {
 				console.log("Totally " + arr.length+ " sources");
 				Promise.all(arr.map(createTable)).then(function(resp) {
 					var insertHtml="";
-					console.log(resp);
 					for (var i = 0; i < resp.length; i++) {
 						if (!resp[i] || !resp[i].query) {
 							continue;
@@ -176,13 +175,8 @@ app.post('/images', upload.array(), function(req, res, next) {
 function queryRedis(query) {
 	// return a new promise.
 	return new Promise(function(resolve, reject) {
-		var redisQuery = ""
-		if (query.type == "source") {
-			redisQuery = "refreshed:source:"+query.query.toLowerCase();
-		} else if (query.type == "topic") {
-			redisQuery = "refreshed:topic:"+query.query.toLowerCase();
-		}
-		client.get(redisQuery, function(error, reply) {
+		
+		var redisFunc = function(error, reply) {
 			if (error) {
 				resolve(jsonfy(query.query, ""));
 			} else {
@@ -230,10 +224,24 @@ function queryRedis(query) {
 					});
 				} else {
 					console.log("Query " + query.query + " from Redis")
-					resolve(jsonfy(query.query, reply));
+					var result = "";
+					if (query.type == "source") {
+						result = reply;
+					} else if (query.type == "topic") {
+						result = reply.imgUrl;
+					}
+					resolve(jsonfy(query.query, result));
 				}
 			}
-		});
+		}
+		var redisQuery = ""
+		if (query.type == "source") {
+			redisQuery = "refreshed:source:"+query.query.toLowerCase();
+			client.get(redisQuery, redisFunc);
+		} else if (query.type == "topic") {
+			redisQuery = "refreshed:topic:"+query.query.toLowerCase();
+			client.hgetall(redisQuery, redisFunc);
+		}
 	});
 }
 
