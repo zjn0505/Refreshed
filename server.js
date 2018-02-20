@@ -27,7 +27,7 @@ fs.readFile(filePath, {encoding: 'utf-8'}, function(err,data){
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
 
-app.get('/topic', function(req, res) {
+app.get('/topic-suggest', function(req, res) {
 	googleTrends.autoComplete({keyword: req.query.q}, function(err, results){
 		if(err) {
 			console.error('there was an error!', err);
@@ -156,7 +156,11 @@ app.post('/update-images',  function(req, res) {
 				if (reply != keycode) {
 					res.status(401).send("Invalid keycode");
 				} else {
-					client.set("refreshed:"+ type +":"+source.toLowerCase(), url, redis.print);
+					if (type == "source") {
+						client.set("refreshed:source:"+source.toLowerCase(), url, redis.print);
+					} else if (type == "topic") {
+						client.hset("refreshed:topic:"+source.toLowerCase(), "imgUrl", url, redis.print);
+					}
 					res.status(200).send("OK");
 				}
 			} else {
@@ -256,6 +260,49 @@ function queryRedis(query) {
 	});
 }
 
+app.post('/update-topic',  function(req, res) {
+	if (req.body) {
+		var keycode = req.headers['x-api-key'];
+		var topic = req.body.topic;
+		var newsDays = req.body.newsDays;
+		if (!keycode || !topic || !newsDays || newsDays == 0) {
+			res.status(400).send("Invalid request");
+		}
+		client.get("password", function(error, reply) {
+			if (error) {
+				res.sendStatus(500);
+			}
+			if (reply) {
+				if (reply != keycode) {
+					res.status(401).send("Invalid keycode");
+				} else {
+					client.hset("refreshed:topic:"+topic.toLowerCase(), "newsDays", newsDays, redis.print);
+					res.status(200).send("OK");
+				}
+			} else {
+				res.status(401).send("Invalid keycode");
+			}
+		});
+	} else {
+		res.status(400).send("Invalid request");
+	}
+});
+
+app.get('/topic-news-days', function(req, res) {
+	if (req.query.q) {
+		var query = req.query.q;
+		client.hget("refreshed:topic:"+query.toLowerCase(), "newsDays", function(error, reply) {
+			if (reply) {
+				res.json({topic:query, newsDays:reply});
+			} else {
+				res.status(400).send("Invalid request");
+			}
+				
+		});
+	} else {
+		res.status(400).send("Invalid request");
+	}
+});
 
 function addToRedis(query, imgUrl) {
 	// imgUrl may be "", so I may manually amend it later.
