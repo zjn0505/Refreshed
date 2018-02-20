@@ -70,19 +70,19 @@ app.get('/all-images', function(req, res) {
 			if (reply) {
 				var arr = []
 				var type = req.query.type;
-				if (!type) {
-					arr = reply.map(function(topic) {
-						var object = {type:"topic", query:topic};
-						return object;
-					});
-
-					arr = arr.concat(response);
-				} else if (type == "topics") {
+				if (type == "topics") {
 					arr = reply.map(function(topic) {
 						var object = {type:"topic", query:topic};
 						return object;
 					});
 				} else if (type == "sources") {
+					arr = arr.concat(response);
+				} else {
+					arr = reply.map(function(topic) {
+						var object = {type:"topic", query:topic};
+						return object;
+					});
+
 					arr = arr.concat(response);
 				}
 				
@@ -126,7 +126,7 @@ function createTable(query) {
 					
 			});
 		} else if (query.type == "topic") {
-			client.hget("refreshed:topic:"+query.query.toLowerCase(), function(error, reply) {
+			client.hgetall("refreshed:topic:"+query.query.toLowerCase(), function(error, reply) {
 				if (reply) {
 					resolve({imgUrl:reply.imgUrl, type:query.type, query:query.query});
 				} else {
