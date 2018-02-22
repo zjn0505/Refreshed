@@ -4,7 +4,7 @@
 
 * **URL**
 
-  /topic
+  /topic-suggest
   
 * **Method**
  
@@ -168,3 +168,79 @@
 * **Success Response**
 
   HTML page of all images
+  
+----
+
+### Update A Topics
+
+* **URL**
+
+  /update-topic
+  
+* **Method**
+ 
+  `POST`
+
+* **Headers**
+
+| Name | Required | Type | Description |
+| ---  | :---:    | ---  | ---         |
+| x-api-key | *   |String|api keys to update image|
+
+* **URL Params**
+
+| Name    | Required | Type | Description |
+| ---     | :---:    | ---  | ---         |
+| topic   |    *     |String| topic name  |
+| newsDays|    *     | int  | the proper days of news for this topic|
+
+* **Success Response**
+  * **Code:** 200 <br />
+  
+* **Error Response**
+
+  * **Code:** 400 Bad Request <br />
+    **Content:** `Invalid request`
+
+  OR
+
+  * **Code:** 401 UNAUTHORIZED <br />
+    **Content:** `Invalid keycode`
+  
+----
+
+### Get Topic News Days
+
+* **URL**
+
+  /topic-news-days
+  
+* **Method**
+ 
+  `GET`
+
+* **URL Params**
+
+| Name | Required | Type | Description |
+| ---  | :---:    | ---  | ---         |
+|  q   |    *     |String|name of topic|
+
+* **Data Params**
+
+  None
+
+* **Success Response**
+  * **Code:** 200 <br />
+
+```json
+{
+  "topic": "lego",
+  "newsDays": "4"
+}
+```
+
+* **Error Response**
+
+  * **Code:** 400 Bad Request <br />
+    **Content:** `Invalid request`
+
