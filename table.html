@@ -78,7 +78,7 @@
 	    $("p.tag").on("click", function(){
 	        $("#editUrlModal").modal();
 	        source = $(this).text();
-	        type = $(this).data("tag");
+	        type = $(this).attr("tag");
 	        var url = $("img[alt='"+source+"']").attr("src");
 	        $("#sourceUrl").val(url);
 			$("div .modal-title").html("Input the new image URL");
