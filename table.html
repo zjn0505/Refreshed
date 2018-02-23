@@ -81,7 +81,7 @@
 	        type = $(this).attr("tag");
 	        var url = $("img[alt='"+source+"']").attr("src");
 	        $("#sourceUrl").val(url);
-			$("div .modal-title").html("Input the new image URL");
+			$("div .modal-title").html("Input the new image URL for <b>" + source + "</b>");
 	    });
 	});
 	$("#saveEditBtn").on("click", function(){
