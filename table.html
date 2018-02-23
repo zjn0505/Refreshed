@@ -78,10 +78,10 @@
 	    $("p.tag").on("click", function(){
 	        $("#editUrlModal").modal();
 	        source = $(this).text();
-	        type = $(this).data("type");
+	        type = $(this).data("tag");
 	        var url = $("img[alt='"+source+"']").attr("src");
 	        $("#sourceUrl").val(url);
-
+			$("div .modal-title").html("Input the new image URL");
 	    });
 	});
 	$("#saveEditBtn").on("click", function(){

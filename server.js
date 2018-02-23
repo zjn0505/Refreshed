@@ -14,7 +14,7 @@ const cheerio = require('cheerio');
 var $;
 const googleTrends = require('google-trends-api');
 const host = "https://api.qwant.com/api/search/images?count=10&offset=1&q={0}&size=small";
-const template = "<div class='cell'><img alt='{0}' src='{1}'/><p class='tag' type={2}>{3}</p></div>";
+const template = "<div class='cell'><img alt='{0}' src='{1}'><p class='tag' tag={2}>{3}</p></div>";
 
 fs.readFile(filePath, {encoding: 'utf-8'}, function(err,data){
     if (!err) {
