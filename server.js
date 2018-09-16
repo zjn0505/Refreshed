@@ -1,5 +1,6 @@
 var request = require('request'),
-	config = require('config');
+	config = require('config'),
+	debug = require('debug')('server');
 var redis = require('redis'),
 	client = redis.createClient();
 var multer = require('multer');
