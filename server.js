@@ -1,35 +1,60 @@
-var request = require('request');
+var request = require('request'),
+	config = require('config');
 var redis = require('redis'),
 	client = redis.createClient();
 var multer = require('multer');
 var upload = multer();
 var express = require('express'),
 	bodyParser = require('body-parser'),
-		app = express(),
-		port = 3002;
+	app = express(),
+	port = config.port;
 var fs = require('fs'),
-    path = require('path'),    
-    filePath = path.join(__dirname, 'table.html');
+	path = require('path'),
+	filePath = path.join(__dirname, 'table.html');
 const cheerio = require('cheerio');
 var $;
 const googleTrends = require('google-trends-api');
 const host = "https://api.qwant.com/api/search/images?count=10&offset=1&q={0}&size=small";
 const template = "<div class='cell'><img alt='{0}' src='{1}'><p class='tag' tag={2}>{3}</p></div>";
 
-fs.readFile(filePath, {encoding: 'utf-8'}, function(err,data){
-    if (!err) {
-        $ = cheerio.load(data);
-    } else {
-        console.log(err);
-    }
+fs.readFile(filePath, {
+	encoding: 'utf-8'
+}, function (err, data) {
+	if (!err) {
+		$ = cheerio.load(data);
+	} else {
+		console.log(err);
+	}
 });
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended:true}));
+if (config.has("swagger-stats")) {
+    var swaggerConfig = config.get("swagger-stats");
+    app.use(swStats.getMiddleware({
+        name: swaggerConfig.name,
+        uriPath: swaggerConfig.urlPath,
+        onResponseFinish: function (req, res, rrr) {
+            debug('onResponseFinish: %s', JSON.stringify(rrr));
+        },
+        authentication: true,
+        sessionMaxAge: 900,
+        elasticsearchIndexPrefix: swaggerConfig.elasticsearchIndexPrefix,
+        elasticsearch: swaggerConfig.elasticsearch,
+        onAuthenticate: function (req, username, password) {
+            return ((username === swaggerConfig.username) && (password === swaggerConfig.password));
+        }
+    }));
+}
 
-app.get('/topic-suggest', function(req, res) {
-	googleTrends.autoComplete({keyword: req.query.q}, function(err, results){
-		if(err) {
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+	extended: true
+}));
+
+app.get('/topic-suggest', function (req, res) {
+	googleTrends.autoComplete({
+		keyword: req.query.q
+	}, function (err, results) {
+		if (err) {
 			console.error('there was an error!', err);
 			res.sendStatus(500);
 		} else {
@@ -47,23 +72,26 @@ app.get('/topic-suggest', function(req, res) {
 	});
 });
 
-app.get('/all-images', function(req, res) {
+app.get('/all-images', function (req, res) {
 	console.log("API called /all-images");
-	new Promise(function(resolve, reject) {
-		client.smembers("refreshed:sources", function(error, reply) {
+	new Promise(function (resolve, reject) {
+		client.smembers("refreshed:sources", function (error, reply) {
 			if (error) {
 				res.sendStatus(500);
 				reject(Error("Query sources failed"));
 			}
 			if (reply) {
-				resolve(reply.map(function(source) {
-					var object = {type:"source", query:source};
+				resolve(reply.map(function (source) {
+					var object = {
+						type: "source",
+						query: source
+					};
 					return object;
-				}));	
+				}));
 			}
 		});
-	}).then(function(response) {
-		client.smembers("refreshed:topics", function(error, reply) {
+	}).then(function (response) {
+		client.smembers("refreshed:topics", function (error, reply) {
 			if (error) {
 				res.sendStatus(500);
 			}
@@ -71,24 +99,30 @@ app.get('/all-images', function(req, res) {
 				var arr = []
 				var type = req.query.type;
 				if (type == "topics") {
-					arr = reply.map(function(topic) {
-						var object = {type:"topic", query:topic};
+					arr = reply.map(function (topic) {
+						var object = {
+							type: "topic",
+							query: topic
+						};
 						return object;
 					});
 				} else if (type == "sources") {
 					arr = arr.concat(response);
 				} else {
-					arr = reply.map(function(topic) {
-						var object = {type:"topic", query:topic};
+					arr = reply.map(function (topic) {
+						var object = {
+							type: "topic",
+							query: topic
+						};
 						return object;
 					});
 
 					arr = arr.concat(response);
 				}
-				
-				console.log("Totally " + arr.length+ " sources");
-				Promise.all(arr.map(createTable)).then(function(resp) {
-					var insertHtml="";
+
+				console.log("Totally " + arr.length + " sources");
+				Promise.all(arr.map(createTable)).then(function (resp) {
+					var insertHtml = "";
 					for (var i = 0; i < resp.length; i++) {
 						if (!resp[i] || !resp[i].query) {
 							continue;
@@ -100,46 +134,54 @@ app.get('/all-images', function(req, res) {
 					}
 					$("#holder").html(insertHtml);
 					res.send($.html());
-				}).catch(function(err) {
+				}).catch(function (err) {
 					console.log(err);
 					res.sendStatus(500);
 				});
-				
+
 			}
 		});
 	});
-	
+
 });
 
 function createTable(query) {
-	return new Promise(function(resolve, reject) {
+	return new Promise(function (resolve, reject) {
 		if (!query || !query.query) {
 			resolve("");
 		}
 		if (query.type == "source") {
-			client.get("refreshed:source:"+query.query.toLowerCase(), function(error, reply) {
+			client.get("refreshed:source:" + query.query.toLowerCase(), function (error, reply) {
 				if (reply) {
-					resolve({imgUrl:reply, type:query.type, query:query.query});
+					resolve({
+						imgUrl: reply,
+						type: query.type,
+						query: query.query
+					});
 				} else {
 					resolve("");
 				}
-					
+
 			});
 		} else if (query.type == "topic") {
-			client.hgetall("refreshed:topic:"+query.query.toLowerCase(), function(error, reply) {
+			client.hgetall("refreshed:topic:" + query.query.toLowerCase(), function (error, reply) {
 				if (reply) {
-					resolve({imgUrl:reply.imgUrl, type:query.type, query:query.query});
+					resolve({
+						imgUrl: reply.imgUrl,
+						type: query.type,
+						query: query.query
+					});
 				} else {
 					resolve("");
 				}
-					
+
 			});
 		}
-		
+
 	});
 }
 
-app.post('/update-images',  function(req, res) {
+app.post('/update-images', function (req, res) {
 	if (req.body) {
 		var keycode = req.headers['x-api-key'];
 		var source = req.body.source;
@@ -148,7 +190,7 @@ app.post('/update-images',  function(req, res) {
 		if (!keycode || !source || !type || (type != "topic" && type != "source")) {
 			res.status(400).send("Invalid request");
 		}
-		client.get("password", function(error, reply) {
+		client.get("password", function (error, reply) {
 			if (error) {
 				res.sendStatus(500);
 			}
@@ -157,9 +199,9 @@ app.post('/update-images',  function(req, res) {
 					res.status(401).send("Invalid keycode");
 				} else {
 					if (type == "source") {
-						client.set("refreshed:source:"+source.toLowerCase(), url, redis.print);
+						client.set("refreshed:source:" + source.toLowerCase(), url, redis.print);
 					} else if (type == "topic") {
-						client.hset("refreshed:topic:"+source.toLowerCase(), "imgUrl", url, redis.print);
+						client.hset("refreshed:topic:" + source.toLowerCase(), "imgUrl", url, redis.print);
 					}
 					res.status(200).send("OK");
 				}
@@ -170,18 +212,18 @@ app.post('/update-images',  function(req, res) {
 	}
 });
 
-app.post('/images', upload.array(), function(req, res, next) {
+app.post('/images', upload.array(), function (req, res, next) {
 	console.log(req.body);
 	var images = [];
 	images = images.concat(req.body);
 
-	Promise.all(images.map(queryRedis)).then(function(resp) {
+	Promise.all(images.map(queryRedis)).then(function (resp) {
 		console.log(resp);
 		var obj = new Object();
 		obj.size = resp.length;
 		obj.data = resp;
 		res.json(obj);
-	}).catch(function(err) {
+	}).catch(function (err) {
 		console.log(err);
 		res.sendStatus(500);
 	});
@@ -189,9 +231,9 @@ app.post('/images', upload.array(), function(req, res, next) {
 
 function queryRedis(query) {
 	// return a new promise.
-	return new Promise(function(resolve, reject) {
-		
-		var redisFunc = function(error, reply) {
+	return new Promise(function (resolve, reject) {
+
+		var redisFunc = function (error, reply) {
 			if (error) {
 				resolve(jsonfy(query.query, ""));
 			} else {
@@ -206,7 +248,7 @@ function queryRedis(query) {
 							'User-Agent': 'request/1'
 						}
 					};
-					request(options, function(error, response, body) {
+					request(options, function (error, response, body) {
 						if (error || body === null || body === undefined) {
 							console.log("Error in query " + error);
 							addToRedis(query, "");
@@ -215,8 +257,7 @@ function queryRedis(query) {
 						var json;
 						try {
 							json = JSON.parse(body);
-						}
-						catch (err) {
+						} catch (err) {
 							console.log("Error in parse " + body);
 						}
 						if (json && json.status == "success" && !(json.data == undefined) && !(json.data.result == undefined)) {
@@ -251,16 +292,16 @@ function queryRedis(query) {
 		}
 		var redisQuery = ""
 		if (query.type == "source") {
-			redisQuery = "refreshed:source:"+query.query.toLowerCase();
+			redisQuery = "refreshed:source:" + query.query.toLowerCase();
 			client.get(redisQuery, redisFunc);
 		} else if (query.type == "topic") {
-			redisQuery = "refreshed:topic:"+query.query.toLowerCase();
+			redisQuery = "refreshed:topic:" + query.query.toLowerCase();
 			client.hgetall(redisQuery, redisFunc);
 		}
 	});
 }
 
-app.post('/update-topic',  function(req, res) {
+app.post('/update-topic', function (req, res) {
 	if (req.body) {
 		var keycode = req.headers['x-api-key'];
 		var topic = req.body.topic;
@@ -268,7 +309,7 @@ app.post('/update-topic',  function(req, res) {
 		if (!keycode || !topic || !newsDays || newsDays == 0) {
 			res.status(400).send("Invalid request");
 		}
-		client.get("password", function(error, reply) {
+		client.get("password", function (error, reply) {
 			if (error) {
 				res.sendStatus(500);
 			}
@@ -276,7 +317,7 @@ app.post('/update-topic',  function(req, res) {
 				if (reply != keycode) {
 					res.status(401).send("Invalid keycode");
 				} else {
-					client.hset("refreshed:topic:"+topic.toLowerCase(), "newsDays", newsDays, redis.print);
+					client.hset("refreshed:topic:" + topic.toLowerCase(), "newsDays", newsDays, redis.print);
 					res.status(200).send("OK");
 				}
 			} else {
@@ -288,16 +329,19 @@ app.post('/update-topic',  function(req, res) {
 	}
 });
 
-app.get('/topic-news-days', function(req, res) {
+app.get('/topic-news-days', function (req, res) {
 	if (req.query.q) {
 		var query = req.query.q;
-		client.hget("refreshed:topic:"+query.toLowerCase(), "newsDays", function(error, reply) {
+		client.hget("refreshed:topic:" + query.toLowerCase(), "newsDays", function (error, reply) {
 			if (reply) {
-				res.json({topic:query, newsDays:reply});
+				res.json({
+					topic: query,
+					newsDays: reply
+				});
 			} else {
 				res.status(400).send("Invalid request");
 			}
-				
+
 		});
 	} else {
 		res.status(400).send("Invalid request");
@@ -309,19 +353,19 @@ function addToRedis(query, imgUrl) {
 	var redisQuery = ""
 	if (query.type == "source") {
 		client.sadd("refreshed:sources", query.query.toLowerCase(), redis.print);
-		client.set("refreshed:source:"+query.query.toLowerCase(), imgUrl, redis.print);
+		client.set("refreshed:source:" + query.query.toLowerCase(), imgUrl, redis.print);
 	} else if (query.type == "topic") {
 		client.sadd("refreshed:topics", query.query.toLowerCase(), redis.print);
-		client.hset("refreshed:topic:"+query.query.toLowerCase(), "imgUrl", imgUrl, redis.print);
+		client.hset("refreshed:topic:" + query.query.toLowerCase(), "imgUrl", imgUrl, redis.print);
 	}
-	
+
 }
 
-app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, x-api-key");
-  res.header("Access-Control-Allow-Methods", "POST, GET");
-  next();
+app.use(function (req, res, next) {
+	res.header("Access-Control-Allow-Origin", "*");
+	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, x-api-key");
+	res.header("Access-Control-Allow-Methods", "POST, GET");
+	next();
 });
 
 app.listen(port);
@@ -334,25 +378,24 @@ function jsonfy(source, imgUrl) {
 	return obj
 }
 
-String.prototype.format = function() {
-    var formatted = this;
-    for( var arg in arguments ) {
-        formatted = formatted.replace("{" + arg + "}", arguments[arg]);
-    }
-    return formatted;
+String.prototype.format = function () {
+	var formatted = this;
+	for (var arg in arguments) {
+		formatted = formatted.replace("{" + arg + "}", arguments[arg]);
+	}
+	return formatted;
 };
 
 
-String.prototype.escape =  function() {
-    return ('' + this) /* Forces the conversion to string. */
-        .replace(/\\/g, '\\\\') /* This MUST be the 1st replacement. */
-        .replace(/\t/g, '\\t') /* These 2 replacements protect whitespaces. */
-        .replace(/\n/g, '\\n')
-        .replace(/\u00A0/g, '\\u00A0') /* Useful but not absolutely necessary. */
-        .replace(/&/g, '\\x26') /* These 5 replacements protect from HTML/XML. */
-        .replace(/'/g, '\\x27')
-        .replace(/"/g, '\\x22')
-        .replace(/</g, '\\x3C')
-        .replace(/>/g, '\\x3E')
-        ;
+String.prototype.escape = function () {
+	return ('' + this) /* Forces the conversion to string. */
+		.replace(/\\/g, '\\\\') /* This MUST be the 1st replacement. */
+		.replace(/\t/g, '\\t') /* These 2 replacements protect whitespaces. */
+		.replace(/\n/g, '\\n')
+		.replace(/\u00A0/g, '\\u00A0') /* Useful but not absolutely necessary. */
+		.replace(/&/g, '\\x26') /* These 5 replacements protect from HTML/XML. */
+		.replace(/'/g, '\\x27')
+		.replace(/"/g, '\\x22')
+		.replace(/</g, '\\x3C')
+		.replace(/>/g, '\\x3E');
 }
