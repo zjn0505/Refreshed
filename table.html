@@ -94,7 +94,7 @@
 		if (inputKey.val() == "") {
 			inputKey.attr("placeholder", "Please input the keycode");
 		} else {
-			var host = "http://130.211.211.220:3002/update-images"
+			var host = "https://api.jienan.xyz/refreshed/update-images"
 			var params = paramsTemplate.format(source, $("#sourceUrl").val(), type)
 			var xhr = new createCORSRequest("POST", host);
 			xhr.open("POST", host, true);
